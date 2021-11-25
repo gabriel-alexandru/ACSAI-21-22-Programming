@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__
+.pytest_cache
+test_01.py
+testlib.py
+program01.txt
+images.py
+png.py
+*.json
