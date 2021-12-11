@@ -7,3 +7,8 @@ program01.txt
 images.py
 png.py
 *.json
+*.html
+*.pdf
+isrecursive.py
+*.ita.py
+data/
