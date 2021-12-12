@@ -37,7 +37,7 @@ def getCombinationsRect(colors, level):
    return combinations
 
 def subdivide(n, lst):
-    return [lst[i:i+n] for i in range(0, len(lst), n)]
+    return tuple([lst[i:i+n] for i in range(0, len(lst), n)])
 
 def divideTuple(tpl, n, newTpl):
    if len(tpl) == 0:
@@ -50,27 +50,27 @@ def divideTuple(tpl, n, newTpl):
 def getEmptyPattern(colors, D):
    images = []
    combinations = getCombinations(colors, D * D)
-   if(len(combinations) > 1 and not isinstance(combinations, tuple)):
+   isTuple = isinstance(combinations, tuple)
+   combLen = len(combinations)
+   if(combLen > 1 and not isTuple):
       for combination in combinations:
-         images.append(tuple(subdivide(D, combination)))
-   elif(isinstance(combinations, tuple) and len(combinations) > 1):
-      tmp = divideTuple(list(combinations), D, [])
-      images.extend(subdivide(D, tmp))
+         images.append(subdivide(D, combination))
+   elif(isTuple and combLen > 1):
+      images.extend(subdivide(D, divideTuple(list(combinations), D, [])))
    else:
       images.append(tuple([combinations]))
    return images
 
 def getCrossPattern(colors, D):
    images = []
-   tmp = getCombinations(colors, 2)
-   combinations = [combination for combination in tmp if combination[0] != combination[1]]
+   combinations = [combination for combination in getCombinations(colors, 2) if combination[0] != combination[1]]
 
    for combination in combinations:
       if(D % 2 == 1):
          tmp = subdivide(D, combination * ((D * D)))
-         images.extend(list(divideTuple(tmp, D, [])))
+         images.extend(list(divideTuple(list(tmp), D, [])))
       else:
-         tmp = tuple(subdivide(D, combination * ((D * D) // 2)))
+         tmp = subdivide(D, combination * ((D * D) // 2))
          tmp2 = []
          for i in range(len(tmp)):
             if i % 2 == 0:
@@ -86,7 +86,7 @@ def getVRect(colors, D):
 
    for combination in combinations:
       tmp = combination * D
-      images.append(tuple(subdivide(D, tmp)))
+      images.append(subdivide(D, tmp))
    return images
 
 def getHRect(colors, D):
@@ -103,18 +103,18 @@ def getHRect(colors, D):
 
 def getDiffPattern(colors, D):
    images = []
-   tmp = getDiffCombinations(colors, D)
+   tmp = getDiffCombinations(colors, D, D*D, getMatrix(D))
    for combination in tmp:
-      images.append(tuple(subdivide(D, tuple(combination))))
+      images.append(subdivide(D, combination))
    return images
 
 def neighbours(matrix, x, y, color):
-   for previousX in range(x-1, x+2): 
+   for previousX in range(x-1, x+2):
       try:
          if matrix[y-1][previousX] == color and previousX != -1:
             return False
       except IndexError:
-         pass
+         break
 
    if matrix[y][x-1] == color and x-1 != -1:
       return False
@@ -122,21 +122,12 @@ def neighbours(matrix, x, y, color):
    return True
 
 def getMatrix(D):
-   return [[None]*D for _ in range(D)]
+   return [[None]*D]*D
 
 def getNextMovesDiff(colors, D, level, nextMoveMatrix, x, y):
-   if x+1 == D:
-      nextMoves = getDiffCombinations(colors, D, level, nextMoveMatrix, 0, y+1)
-   else:
-      nextMoves = getDiffCombinations(colors, D, level, nextMoveMatrix, x+1, y)
-   
-   return nextMoves
+   return getDiffCombinations(colors, D, level, nextMoveMatrix, 0, y+1) if x+1 == D else getDiffCombinations(colors, D, level, nextMoveMatrix, x+1, y)
 
-def getDiffCombinations(colors, D, level=None, matrix=None, x=0, y=0):
-   if matrix == None:
-      matrix = getMatrix(D)
-      level = D*D
-
+def getDiffCombinations(colors, D, level, matrix, x=0, y=0):
    if level == 1:
       return [c for c in colors if neighbours(matrix, x, y, c)]          
    combos = []          
@@ -144,25 +135,23 @@ def getDiffCombinations(colors, D, level=None, matrix=None, x=0, y=0):
       nextMoveMatrix = getNextMoveMatrix(matrix)
       if neighbours(nextMoveMatrix, x, y, color):
          nextMoveMatrix[y][x] = color
-         nextMoves = getNextMovesDiff(colors, D, level - 1, nextMoveMatrix, x, y)
-         for move in nextMoves:
+         for move in getNextMovesDiff(colors, D, level - 1, nextMoveMatrix, x, y):
             combos.append(getNextMove(color, move, level))
    return combos
 
 def ex(colors, D, img_properties):
-   images = []
-
    if img_properties == '':
-      images = getEmptyPattern(colors, D)
+      return getEmptyPattern(colors, D)
    elif img_properties == 'pattern_cross_':
-      images = getCrossPattern(colors, D)
+      return getCrossPattern(colors, D)
    elif img_properties == 'pattern_vrect_':
-      images = getVRect(colors, D)
+      return getVRect(colors, D)
    elif img_properties == 'pattern_hrect_':
-      images = getHRect(colors, D)
+      return getHRect(colors, D)
    elif img_properties == 'pattern_diff_':
-      images = getDiffPattern(colors, D)
-   return images
+      return getDiffPattern(colors, D)
+   else:
+      return []
 
 if __name__ == '__main__':
    # add here your test cases
